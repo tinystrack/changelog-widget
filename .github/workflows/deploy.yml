@@ -22,8 +22,8 @@ jobs:
       - name: Deploy
         run: |
           ssh -i ~/.ssh/deploy_key \
-              -p ${{ secrets.SSH_PORT }} \
+              -p 19785 \
               -o StrictHostKeyChecking=no \
               -o UserKnownHostsFile=/dev/null \
-              ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+              root@172.98.22.157 \
               "cd /root/changelog-widget && git pull origin main && docker compose down && docker compose up -d --build"
