@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>changelog-widget ¡ª dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:        #0d0e11;
+      --surface:   #13151a;
+      --surface2:  #1c1f27;
+      --border:    #252830;
+      --border2:   #2e3340;
+      --text:      #d4d8e1;
+      --muted:     #6b7280;
+      --accent:    #00e5a0;
+      --accent-dim:#00a872;
+      --red:       #ff4d6a;
+      --yellow:    #f5c542;
+      --blue:      #4d9fff;
+      --mono:      'IBM Plex Mono', monospace;
+      --sans:      'IBM Plex Sans', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 14px; }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; line-height: 1.6; }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      z-index: 100;
+    }
+    .logo { font-family: var(--mono); font-size: 13px; font-weight: 600; letter-spacing: 0.04em; display: flex; align-items: center; gap: 8px; }
+    .logo-dot { width: 7px; height: 7px; background: var(--accent); border-radius: 50%; display: inline-block; box-shadow: 0 0 8px var(--accent); animation: pulse 2.4s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(0.7);} }
+    .header-right { display: flex; align-items: center; gap: 16px; }
+    .badge { font-family: var(--mono); font-size: 10px; background: var(--surface2); border: 1px solid var(--border2); padding: 2px 8px; border-radius: 3px; color: var(--muted); letter-spacing: 0.06em; }
+    .cta-header { font-family: var(--mono); font-size: 11px; color: var(--accent); text-decoration: none; border: 1px solid var(--accent-dim); padding: 4px 12px; border-radius: 3px; transition: background 0.15s, color 0.15s; letter-spacing: 0.03em; }
+    .cta-header:hover { background: var(--accent); color: var(--bg); }
+
+    /* Auth gate */
+    #auth-gate {
+      max-width: 400px;
+      margin: 80px auto;
+      padding: 0 24px;
+    }
+    .auth-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 32px;
+    }
+    .auth-title { font-family: var(--mono); font-size: 13px; font-weight: 600; margin-bottom: 20px; color: var(--text); }
+    .auth-error { font-family: var(--mono); font-size: 11px; color: var(--red); margin-top: 10px; display: none; }
+
+    main { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; display: none; }
+
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .section-title { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+
+    .create-form { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 20px; display: flex; gap: 10px; align-items: flex-end; margin-bottom: 32px; flex-wrap: wrap; }
+    .field { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 160px; }
+    .field label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+    .field input, .field select, .field textarea { background: var(--surface2); border: 1px solid var(--border2); color: var(--text); font-family: var(--mono); font-size: 13px; padding: 8px 12px; border-radius: 4px; outline: none; transition: border-color 0.15s; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent-dim); }
+    .field input::placeholder, .field textarea::placeholder { color: var(--muted); }
+    .field textarea { resize: vertical; min-height: 80px; }
+    .field select option { background: var(--surface2); }
+
+    .btn { font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; cursor: pointer; border: none; border-radius: 4px; padding: 9px 20px; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .btn-primary { background: var(--accent); color: var(--bg); font-weight: 600; }
+    .btn-primary:hover { background: #00ffb3; }
+    .btn-danger { background: transparent; color: var(--red); border: 1px solid #ff4d6a44; font-size: 11px; padding: 5px 10px; }
+    .btn-danger:hover { background: #ff4d6a18; }
+    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border2); font-size: 11px; padding: 5px 10px; }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin-bottom: 32px; }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { border-bottom: 1px solid var(--border); }
+    th { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); text-align: left; padding: 10px 16px; background: var(--surface2); }
+    td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #ffffff04; }
+
+    .mono-text { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+    .label-text { font-weight: 500; }
+    .time-text { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+    .type-badge {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .type-feature     { background: #00e5a022; color: var(--accent);  border: 1px solid #00e5a044; }
+    .type-improvement { background: #4d9fff22; color: var(--blue);    border: 1px solid #4d9fff44; }
+    .type-fix         { background: #f5c54222; color: var(--yellow);  border: 1px solid #f5c54244; }
+    .type-security    { background: #ff4d6a22; color: var(--red);     border: 1px solid #ff4d6a44; }
+
+    .empty-state { text-align: center; padding: 48px 24px; color: var(--muted); font-family: var(--mono); font-size: 12px; }
+
+    /* Embed box */
+    .embed-box { background: var(--surface2); border: 1px solid var(--border2); border-radius: 4px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; }
+    .embed-box code { font-family: var(--mono); font-size: 11px; color: var(--accent); word-break: break-all; flex: 1; }
+    .btn-copy { font-family: var(--mono); font-size: 10px; background: transparent; border: 1px solid var(--border2); color: var(--muted); padding: 4px 10px; border-radius: 3px; cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+    .btn-copy:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-copy.copied { border-color: var(--accent); color: var(--accent); }
+
+    /* Project detail */
+    .detail-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; display: none; margin-bottom: 32px; }
+    .detail-panel.open { display: block; }
+    .detail-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .detail-title { font-family: var(--mono); font-size: 12px; font-weight: 600; }
+    .detail-body { padding: 20px; }
+
+    /* Entry form */
+    .entry-form { background: var(--surface2); border: 1px solid var(--border2); border-radius: 6px; padding: 16px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px; }
+    .entry-form-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .entry-form-row .field { min-width: 120px; }
+
+    /* CTA banner */
+    .cta-banner { border: 1px solid var(--border2); border-radius: 6px; padding: 24px 28px; background: linear-gradient(135deg, #13151a 0%, #1a1d24 100%); display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+    .cta-eyebrow { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-dim); margin-bottom: 6px; }
+    .cta-headline { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+    .cta-sub { color: var(--muted); font-size: 13px; max-width: 480px; }
+    .cta-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .pill { font-family: var(--mono); font-size: 10px; border: 1px solid var(--border2); padding: 3px 10px; border-radius: 20px; color: var(--muted); }
+    .cta-right { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
+    .btn-cta-main { font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 0.05em; background: var(--accent); color: var(--bg); border: none; padding: 11px 24px; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; transition: background 0.15s; white-space: nowrap; }
+    .btn-cta-main:hover { background: #00ffb3; }
+    .cta-note { font-family: var(--mono); font-size: 10px; color: var(--muted); text-align: right; }
+
+    #toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface2); border: 1px solid var(--border2); padding: 10px 18px; border-radius: 4px; font-family: var(--mono); font-size: 12px; color: var(--accent); opacity: 0; transform: translateY(8px); transition: opacity 0.2s, transform 0.2s; pointer-events: none; z-index: 999; }
+    #toast.show { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 640px) {
+      .create-form { flex-direction: column; }
+      .cta-banner { flex-direction: column; }
+      .cta-right { align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-dot"></span>
+    changelog-widget
+  </div>
+  <div class="header-right">
+    <span class="badge">SELF-HOSTED</span>
+    <a class="cta-header" href="https://changeloghq.com?ref=changelog-widget" target="_blank">ChangelogHQ ¨J</a>
+  </div>
+</header>
+
+<!-- Auth gate -->
+<div id="auth-gate">
+  <div class="auth-box">
+    <div class="auth-title">// enter admin token</div>
+    <div class="field">
+      <label>Admin Token</label>
+      <input type="password" id="token-input" placeholder="your ADMIN_TOKEN" />
+    </div>
+    <div style="margin-top:12px">
+      <button class="btn btn-primary" onclick="login()">Enter Dashboard</button>
+    </div>
+    <div class="auth-error" id="auth-error">Invalid token. Check your ADMIN_TOKEN env var.</div>
+  </div>
+</div>
+
+<main id="main">
+
+  <!-- Projects -->
+  <div class="section-header">
+    <span class="section-title">// projects</span>
+  </div>
+  <div class="create-form">
+    <div class="field">
+      <label>Project Name</label>
+      <input type="text" id="input-project-name" placeholder="e.g. ChangelogHQ" />
+    </div>
+    <button class="btn btn-primary" onclick="createProject()">+ New Project</button>
+  </div>
+
+  <div class="table-wrap" style="margin-bottom:32px">
+    <table>
+      <thead>
+        <tr>
+          <th>Project</th>
+          <th>Embed Token</th>
+          <th>Embed Code</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="project-tbody">
+        <tr><td colspan="4" class="empty-state">No projects yet.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Project detail -->
+  <div class="detail-panel" id="detail-panel">
+    <div class="detail-header">
+      <span class="detail-title" id="detail-title">¡ª</span>
+      <button class="btn btn-ghost" onclick="closeDetail()">close</button>
+    </div>
+    <div class="detail-body">
+
+      <!-- Add entry form -->
+      <div class="section-title" style="margin-bottom:12px">// new entry</div>
+      <div class="entry-form">
+        <div class="entry-form-row">
+          <div class="field">
+            <label>Type</label>
+            <select id="input-type">
+              <option value="feature">Feature</option>
+              <option value="improvement" selected>Improvement</option>
+              <option value="fix">Fix</option>
+              <option value="security">Security</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Version</label>
+            <input type="text" id="input-version" placeholder="e.g. 1.2.0" />
+          </div>
+          <div class="field" style="flex:2;min-width:200px">
+            <label>Title</label>
+            <input type="text" id="input-entry-title" placeholder="e.g. Added dark mode" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Content</label>
+          <textarea id="input-content" placeholder="Describe this update..."></textarea>
+        </div>
+        <div>
+          <button class="btn btn-primary" onclick="createEntry()">+ Publish Entry</button>
+        </div>
+      </div>
+
+      <!-- Entries list -->
+      <div class="section-title" style="margin-bottom:12px">// entries</div>
+      <div class="table-wrap" style="margin-bottom:0">
+        <table>
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Version</th>
+              <th>Title</th>
+              <th>Date</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="entry-tbody">
+            <tr><td colspan="5" class="empty-state">No entries yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-banner">
+    <div>
+      <div class="cta-eyebrow">Want more power?</div>
+      <div class="cta-headline">Meet ChangelogHQ ¡ª changelog built for teams.</div>
+      <div class="cta-sub">changelog-widget is great for self-hosting, but ChangelogHQ adds team collaboration, email notifications, custom domains, analytics, and more ¡ª no infra to manage.</div>
+      <div class="cta-pills">
+        <span class="pill">Email notifications</span>
+        <span class="pill">Custom domain</span>
+        <span class="pill">Team collaboration</span>
+        <span class="pill">Analytics</span>
+        <span class="pill">Public changelog page</span>
+      </div>
+    </div>
+    <div class="cta-right">
+      <a class="btn-cta-main" href="https://changeloghq.com?ref=changelog-widget" target="_blank">Try ChangelogHQ free ¡ú</a>
+      <span class="cta-note">14-day free trial ¡¤ no credit card</span>
+    </div>
+  </div>
+
+</main>
+
+<div id="toast"></div>
+
+<script>
+  const BASE = window.location.origin;
+  let ADMIN_TOKEN = "";
+  let currentProjectId = null;
+
+  // ©¤©¤ Auth ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+  async function login() {
+    const token = document.getElementById("token-input").value.trim();
+    if (!token) return;
+    const r = await fetch("/api/projects", {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    if (!r.ok) {
+      document.getElementById("auth-error").style.display = "block";
+      return;
+    }
+    ADMIN_TOKEN = token;
+    sessionStorage.setItem("clw-admin-token", token);
+    document.getElementById("auth-gate").style.display = "none";
+    document.getElementById("main").style.display = "block";
+    const projects = await r.json();
+    renderProjects(projects);
+  }
+
+  document.getElementById("token-input").addEventListener("keydown", e => {
+    if (e.key === "Enter") login();
+  });
+
+  // Auto-login from session
+  window.addEventListener("DOMContentLoaded", async () => {
+    const saved = sessionStorage.getItem("clw-admin-token");
+    if (!saved) return;
+    const r = await fetch("/api/projects", {
+      headers: { "Authorization": `Bearer ${saved}` }
+    });
+    if (!r.ok) { sessionStorage.removeItem("clw-admin-token"); return; }
+    ADMIN_TOKEN = saved;
+    document.getElementById("auth-gate").style.display = "none";
+    document.getElementById("main").style.display = "block";
+    renderProjects(await r.json());
+  });
+
+  function authHeaders() {
+    return { "Authorization": `Bearer ${ADMIN_TOKEN}`, "Content-Type": "application/json" };
+  }
+
+  // ©¤©¤ Helpers ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+  function toast(msg) {
+    const el = document.getElementById("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    setTimeout(() => el.classList.remove("show"), 2200);
+  }
+
+  function esc(s) {
+    const d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function fmtTime(ts) {
+    if (!ts) return "¡ª";
+    return new Date(ts).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  }
+
+  // ©¤©¤ Projects ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+  async function loadProjects() {
+    const r = await fetch("/api/projects", { headers: authHeaders() });
+    renderProjects(await r.json());
+  }
+
+  function renderProjects(projects) {
+    const tbody = document.getElementById("project-tbody");
+    if (!projects.length) {
+      tbody.innerHTML = `<tr><td colspan="4" class="empty-state">No projects yet. Create your first one above.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = projects.map(p => {
+      const embedCode = `&lt;script src="${BASE}/widget.js" data-id="${p.token}"&gt;&lt;/script&gt;`;
+      const embedRaw  = `<script src="${BASE}/widget.js" data-id="${p.token}"></script>`;
+      return `
+        <tr>
+          <td><span class="label-text" style="cursor:pointer;color:var(--accent)" onclick="openDetail('${p.id}','${esc(p.name)}')">${esc(p.name)}</span></td>
+          <td><span class="mono-text">${p.token}</span></td>
+          <td>
+            <div class="embed-box">
+              <code>${embedCode}</code>
+              <button class="btn-copy" onclick="copyText(\`${embedRaw.replace(/`/g,'\\`')}\`, this)">copy</button>
+            </div>
+          </td>
+          <td style="text-align:right">
+            <button class="btn btn-danger" onclick="deleteProject('${p.id}')">delete</button>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  async function createProject() {
+    const name = document.getElementById("input-project-name").value.trim();
+    if (!name) return toast("Project name required");
+    const r = await fetch("/api/projects", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ name })
+    });
+    if (!r.ok) { const e = await r.json(); return toast(e.error || "Error"); }
+    document.getElementById("input-project-name").value = "";
+    await loadProjects();
+    toast("Project created");
+  }
+
+  async function deleteProject(id) {
+    if (!confirm("Delete project and all its entries?")) return;
+    await fetch(`/api/projects/${id}`, { method: "DELETE", headers: authHeaders() });
+    if (currentProjectId === id) closeDetail();
+    await loadProjects();
+    toast("Project deleted");
+  }
+
+  // ©¤©¤ Detail / Entries ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+  async function openDetail(id, name) {
+    currentProjectId = id;
+    document.getElementById("detail-title").textContent = `// ${name}`;
+    document.getElementById("detail-panel").classList.add("open");
+    await loadEntries(id);
+    document.getElementById("detail-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function closeDetail() {
+    currentProjectId = null;
+    document.getElementById("detail-panel").classList.remove("open");
+  }
+
+  async function loadEntries(projectId) {
+    const r = await fetch(`/api/widget/${projectId}`, { headers: authHeaders() });
+    // use public widget endpoint for listing
+    const data = await r.json();
+    renderEntries(data.entries || []);
+  }
+
+  function renderEntries(entries) {
+    const tbody = document.getElementById("entry-tbody");
+    if (!entries.length) {
+      tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No entries yet.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = entries.map(e => `
+      <tr>
+        <td><span class="type-badge type-${esc(e.type)}">${esc(e.type)}</span></td>
+        <td><span class="mono-text">${e.version ? "v" + esc(e.version) : "¡ª"}</span></td>
+        <td><span class="label-text">${esc(e.title)}</span></td>
+        <td><span class="time-text">${fmtTime(e.published_at)}</span></td>
+        <td style="text-align:right">
+          <button class="btn btn-danger" onclick="deleteEntry('${e.id}')">delete</button>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  async function createEntry() {
+    if (!currentProjectId) return;
+    const title   = document.getElementById("input-entry-title").value.trim();
+    const content = document.getElementById("input-content").value.trim();
+    const type    = document.getElementById("input-type").value;
+    const version = document.getElementById("input-version").value.trim();
+    if (!title || !content) return toast("Title and content required");
+
+    const r = await fetch(`/api/projects/${currentProjectId}/entries`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ title, content, type, version })
+    });
+    if (!r.ok) { const e = await r.json(); return toast(e.error || "Error"); }
+
+    document.getElementById("input-entry-title").value = "";
+    document.getElementById("input-content").value = "";
+    document.getElementById("input-version").value = "";
+    await loadEntries(currentProjectId);
+    toast("Entry published");
+  }
+
+  async function deleteEntry(entryId) {
+    if (!confirm("Delete this entry?")) return;
+    await fetch(`/api/projects/${currentProjectId}/entries/${entryId}`, {
+      method: "DELETE",
+      headers: authHeaders()
+    });
+    await loadEntries(currentProjectId);
+    toast("Entry deleted");
+  }
+
+  // ©¤©¤ Copy ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+  function copyText(text, btn) {
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = "copied!";
+      btn.classList.add("copied");
+      setTimeout(() => { btn.textContent = "copy"; btn.classList.remove("copied"); }, 2000);
+      toast("Copied to clipboard");
+    });
+  }
+</script>
+</body>
+</html>

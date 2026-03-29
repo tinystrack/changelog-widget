@@ -1,0 +1,22 @@
+version: "3.9"
+services:
+  changelog-widget:
+    build: .
+    container_name: changelog-widget
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    volumes:
+      - changelog_data:/app/data
+    environment:
+      PORT: 3000
+      DB_PATH: /app/data/changelog-widget.db
+      ADMIN_TOKEN: "a880fd0f0d10f5879ee187714d733b48aec3d67ef927a80a48c53e5349a53b46"
+      TOKEN_SECRET: "341f0483b56fbd88ea2b6b02a5090e7eb555cf425edfb7f7b8756c312ae9f6d4"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+volumes:
+  changelog_data:
