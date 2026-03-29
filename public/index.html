@@ -375,7 +375,7 @@
     }
     tbody.innerHTML = projects.map(p => {
       const embedCode = `&lt;script src="${BASE}/widget.js" data-id="${p.token}"&gt;&lt;/script&gt;`;
-      const embedRaw  = `<script src="${BASE}/widget.js" data-id="${p.token}"></script>`;
+      const embedRaw  = '<script src="' + BASE + '/widget.js" data-id="' + p.token + '"><\/script>';
       return `
         <tr>
           <td><span class="label-text" style="cursor:pointer;color:var(--accent)" onclick="openDetail('${p.id}','${esc(p.name)}')">${esc(p.name)}</span></td>
