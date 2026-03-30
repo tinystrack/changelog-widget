@@ -13,6 +13,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Debug secrets
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+        run: |
+          echo "SSH_HOST length: ${#SSH_HOST}"
+          echo "SSH_PORT length: ${#SSH_PORT}"
+          echo "SSH_USER length: ${#SSH_USER}"
+          echo "SSH_KEY length: ${#SSH_KEY}"
+
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
