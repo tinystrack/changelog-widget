@@ -13,12 +13,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-
+      - - name: Setup SSH
+          run: |
+            mkdir -p ~/.ssh
+            printf '%s\n' "${{ secrets.SSH_KEY }}" > ~/.ssh/deploy_key
+            chmod 600 ~/.ssh/deploy_key
       - name: Deploy
         run: |
           ssh -i ~/.ssh/deploy_key \
